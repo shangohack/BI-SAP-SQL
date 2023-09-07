@@ -1,0 +1,45 @@
+USE [DM_PP]
+GO
+
+/****** Object:  View [dbo].[compra_pendiente]    Script Date: 03/09/2023 16:16:42 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER VIEW [dbo].[compra_pendiente]
+AS
+
+SELECT		TOP (100) PERCENT CONVERT(NUMERIC(20, 0), DW.va4.EKKO.EBELN) AS PEDIDO, 
+			DW.va4.EKKO.BEDAT AS Fecha, 
+			DW.va4.EKPO.EBELP, 
+			DW.va4.EKKO.BSART AS CLASE_PEDIDO, 
+			DW.va4.EKPO.MATNR AS COD_MATERIAL, 
+            DW.va4.MAKT.MAKTG AS MATERIAL, 
+			CONVERT(NUMERIC(10, 0), DW.va4.EKPO.MENGE - (CASE WHEN dbo.Entradas.SumOfMENGE <> 0 THEN dbo.Entradas.SumOfMENGE ELSE 0 END)) AS CANTIDAD, 
+            DW.va4.EKPO.MEINS AS UNIDAD, 
+			DW.va4.EKPO.ELIKZ AS ENTREGA_FINAL, 
+			CONVERT(NUMERIC(10, 0), dbo.Entradas.SumOfMENGE) AS CANT_ENTRADA, 
+			CONVERT(NUMERIC(10, 0), DW.va4.EKPO.MENGE) AS CANT_PEDIDA
+
+FROM        DW.va4.EKKO INNER JOIN
+				DW.va4.EKPO 
+					ON DW.va4.EKKO.EBELN = DW.va4.EKPO.EBELN AND DW.va4.EKKO.MANDT = DW.va4.EKPO.MANDT INNER JOIN
+                DW.va4.MARA 
+					ON DW.va4.MARA.MANDT = DW.va4.EKPO.MANDT AND DW.va4.EKPO.MATNR = DW.va4.MARA.MATNR INNER JOIN
+                DW.va4.MAKT 
+					ON DW.va4.MARA.MANDT = DW.va4.MAKT.MANDT AND DW.va4.MARA.MATNR = DW.va4.MAKT.MATNR LEFT OUTER JOIN
+                dbo.Entradas 
+					ON DW.va4.EKPO.EBELP = dbo.Entradas.EBELP AND DW.va4.EKPO.EBELN = dbo.Entradas.EBELN
+
+WHERE		(DW.va4.EKKO.BEDAT > N'20210101') AND 
+			(DW.va4.EKPO.MENGE - (CASE WHEN dbo.Entradas.SumOfMENGE <> 0 THEN dbo.Entradas.SumOfMENGE ELSE 0 END) <> 0) AND 
+			(DW.va4.EKPO.ELIKZ <> 'X') AND 
+            (DW.va4.EKPO.LOEKZ <> 'L') AND 
+			(DW.va4.MARA.MANDT = '040') AND 
+			(DW.va4.MAKT.SPRAS = 'S') AND 
+			(DW.va4.EKKO.LOEKZ <> 'L') AND 
+			(DW.va4.EKPO.LGORT = 'MAD')
+
+GO

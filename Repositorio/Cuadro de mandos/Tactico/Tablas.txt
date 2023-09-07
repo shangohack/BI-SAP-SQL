@@ -1,0 +1,20 @@
+-------------------------- Tablas adicionales ------------------------
+
+
+A0_Calendario = CALENDAR(DATE(YEAR(TODAY())-3,1,1), DATE(YEAR(MAX(FACTURACION_TOTAL[00 FECHA])),12,31))
+
+Año = YEAR(A0_Calendario[Date])
+
+Mes = FORMAT(A0_Calendario[Date],"MM")
+
+Año Mes = A0_Calendario[Año] & " - " & A0_Calendario[Mes]
+
+----------------------------------------------------------------------
+
+A0_CalendarioFT = CALENDAR(DATE(YEAR(TODAY())-3,1,1), DATE(YEAR(MAX(FACTURACION_TOTAL[00 FECHA])),12,31))
+
+Año = YEAR(A0_Calendario[Date])
+
+Mes = FORMAT(A0_Calendario[Date],"MM")
+
+Año Mes = A0_Calendario[Año] & " - " & A0_Calendario[Mes]

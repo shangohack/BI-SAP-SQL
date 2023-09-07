@@ -1,0 +1,45 @@
+USE [DM_PP]
+GO
+
+/****** Object:  View [dbo].[precios_especiales]    Script Date: 02/09/2023 1:50:14 ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER VIEW [dbo].[precios_especiales]
+AS
+
+SELECT      DW.va4.MAKT.MAKTX AS Descripcion, 
+			CAST(DW.va4.ZA005.KUNNR AS INT) AS Cliente, 
+			DW.va4.KNA1.NAME1 AS Nombre, 
+			DW.va4.ZA005.DATBI AS Hasta, 
+			DW.va4.ZA005.DATAB AS Desde, 
+			DW.va4.KONP.KONWA AS Moneda, 
+            DW.va4.KONP.KBETR AS Importe, 
+			DW.va4.MBEW.VERPR AS Coste, 
+			DW.va4.KONP.KMEIN AS Unidad, 
+			DW.va4.ZA005.KUNNR AS Cliente_E, 
+			DW.va4.ZA005.MATNR AS Material_E, 
+			DW.va4.ZA005.VKORG AS ORG
+
+FROM        DW.va4.KNA1 INNER JOIN
+				DW.va4.MAKT INNER JOIN
+                DW.va4.MARA 
+					ON DW.va4.MAKT.MANDT = DW.va4.MARA.MANDT AND DW.va4.MAKT.MATNR = DW.va4.MARA.MATNR INNER JOIN
+                DW.va4.ZA005 
+					ON DW.va4.MARA.MANDT = DW.va4.ZA005.MANDT AND DW.va4.MARA.MATNR = DW.va4.ZA005.MATNR 
+					ON DW.va4.KNA1.MANDT = DW.va4.ZA005.MANDT AND DW.va4.KNA1.KUNNR = DW.va4.ZA005.KUNNR INNER JOIN
+                DW.va4.KONP 
+					ON DW.va4.ZA005.MANDT = DW.va4.KONP.MANDT AND DW.va4.ZA005.KNUMH = DW.va4.KONP.KNUMH AND 
+						DW.va4.ZA005.KAPPL = DW.va4.KONP.KAPPL AND DW.va4.ZA005.KSCHL = DW.va4.KONP.KSCHL INNER JOIN
+                DW.va4.MBEW 
+					ON DW.va4.ZA005.MANDT = DW.va4.MBEW.MANDT AND DW.va4.ZA005.MATNR = DW.va4.MBEW.MATNR
+
+WHERE       (DW.va4.ZA005.DATBI >= CAST(YEAR(GETDATE()) AS VARCHAR) + CAST(MONTH(GETDATE()) AS VARCHAR) + CAST(DAY(GETDATE()) AS VARCHAR)) AND 
+			(DW.va4.MAKT.SPRAS = N'S') AND 
+			(DW.va4.ZA005.MANDT = N'040') AND 
+            (DW.va4.MARA.PRDHA = N'00100')
+
+GO

@@ -1,0 +1,20 @@
+-------------------------- Tablas adicionales ------------------------
+
+00 Dimension Ranking Ventas = {
+    ("Representante", NAMEOF('FACTURACION_TOTAL'[C03 Representante]), 0),
+    ("Comisionista", NAMEOF('FACTURACION_TOTAL'[C01 Comisionista]), 1),
+    ("Cliente", NAMEOF('FACTURACION_TOTAL'[B01 COD_CLIENTE]), 2),
+    ("Material", NAMEOF('FACTURACION_TOTAL'[A01 COD_MATERIAL]), 3)
+}
+
+----------------------------------------------------------------------
+
+A0_Calendario = CALENDAR(DATE(YEAR(TODAY())-3,1,1), DATE(YEAR(MAX(FACTURACION_TOTAL[00 FECHA])),12,31))
+
+Año = YEAR(A0_Calendario[Date])
+
+Mes = FORMAT(A0_Calendario[Date],"MM")
+
+Año Mes = A0_Calendario[Año] & " - " & A0_Calendario[Mes]
+
+----------------------------------------------------------------------

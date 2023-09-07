@@ -1,0 +1,113 @@
+
+----------------------- Medidas FACTURACION_TOTAL ----------------------------
+
+00 Fecha Año = YEAR(FACTURACION_TOTAL[00 FECHA])
+
+01 Valor Analizar Costes = 
+		SWITCH(SELECTEDVALUE(Variables[Num]),
+        --UNITARIAS
+		1,  [M01 Costes Ok Filter]--,
+        --2,  [K02 Euro / KG],
+        --3,  SUM([P02 Cantidad Total])
+        )
+		
+01 Valor Analizar Importe = 
+		SWITCH(SELECTEDVALUE(Variables[Num]),
+        --UNITARIAS
+		1,  [K01 Importe Ok Filter],
+        2,  [K02 Euro / KG],
+        3,  SUM(FACTURACION_TOTAL[P01 CANTIDAD])
+        )
+		
+01 Valor Analizar Importe Acumulado = 
+VAR RunningTotal= CALCULATE([01 Valor Analizar Importe], FILTER(ALLSELECTED(A0_Calendario), A0_Calendario[Date]<=MAX(A0_Calendario[Date])   )    )
+RETURN  RunningTotal
+
+02 Valor Analizar Importe Año Ant = CALCULATE([01 Valor Analizar Importe], REMOVEFILTERS(FACTURACION_TOTAL[00 Fecha Año]), SAMEPERIODLASTYEAR(A0_Calendario[Date]))
+
+02 Valor Analizar Importe Año Ant Acumulado = 
+VAR ListaTexto = CONCATENATEX( VALUES('A0_Meses'[Meses]) , [Meses] , ",")
+VAR ListaMeses = SUBSTITUTE ( ListaTexto, ",", "|" )
+VAR Size = PATHLENGTH ( ListaMeses )
+VAR Tabla =
+    ADDCOLUMNS(
+        GENERATESERIES( 1, Size ),
+        "mylist", VALUE( PATHITEM( ListaMeses, [Value] ) )
+    )
+VAR ListaFinal =  SELECTCOLUMNS( Tabla, "list", [mylist] )
+
+VAR YearSelec = SELECTEDVALUE(A0_Calendario[Año])
+VAR RunningTotal= CALCULATE([02 Valor Analizar Importe Año Ant], FILTER(ALL(A0_Calendario[Date]), 
+                                                            YEAR(A0_Calendario[Date]) = YearSelec && A0_Calendario[Date]<=MAX(A0_Calendario[Date]) )
+                            )
+RETURN  RunningTotal
+
+K01 Importe Ok = CALCULATE(SUM(FACTURACION_TOTAL[K01 IMPORTE]))
+
+K01 Importe OK Año Ant = CALCULATE([K01 Importe Ok], REMOVEFILTERS(FACTURACION_TOTAL[00 Fecha Año]), SAMEPERIODLASTYEAR(A0_Calendario[Date]))
+
+K01 Importe Ok Diff = [K01 Importe Ok] - [K01 Importe OK Año Ant]
+
+K01 Importe Ok Filter = 
+VAR ListaTexto = CONCATENATEX( VALUES('A0_Meses'[Meses]) , [Meses] , ",")
+VAR ListaMeses = SUBSTITUTE ( ListaTexto, ",", "|" )
+VAR Size = PATHLENGTH ( ListaMeses )
+VAR Tabla =
+    ADDCOLUMNS(
+        GENERATESERIES( 1, Size ),
+        "mylist", VALUE( PATHITEM( ListaMeses, [Value] ) )
+    )
+VAR ListaFinal =  SELECTCOLUMNS( Tabla, "list", [mylist] )
+RETURN
+    CALCULATE( SUM (FACTURACION_TOTAL[K01 IMPORTE]), VALUE(MONTH(FACTURACION_TOTAL[00 FECHA])) IN ListaFinal )
+	
+K02 Euro / KG = CALCULATE(DIVIDE([K01 Importe Ok], [P02 Cantidad Total Ok], 0))
+
+K02 Euro / KG Año Ant = CALCULATE([K02 Euro / KG], REMOVEFILTERS(FACTURACION_TOTAL[00 Fecha Año]), SAMEPERIODLASTYEAR(A0_Calendario[Date]) )
+
+K03 % Margen / Ventas = CALCULATE(1-(DIVIDE(FACTURACION_TOTAL[M01 Costes Ok Filter],FACTURACION_TOTAL[K01 Importe Ok Filter],0)))
+
+K03 % Margen / Ventas Año Ant = CALCULATE(1-DIVIDE(FACTURACION_TOTAL[M01 Costes Ok Filter],FACTURACION_TOTAL[K01 Importe Ok Filter],0), REMOVEFILTERS(FACTURACION_TOTAL[00 Fecha Año]), SAMEPERIODLASTYEAR(A0_Calendario[Date]) )
+
+K03 % Margen / ventas Diff = [K03 % Margen / ventas] - [K03 % Margen / ventas Año Ant] 
+
+K04 Euro Costes / KG = CALCULATE(DIVIDE([M01 Costes Ok], [P02 Cantidad Total Ok], 0) )
+
+M01 Costes Ok = CALCULATE(SUM(FACTURACION_TOTAL[M01 COSTES]))
+
+M01 Costes Ok Filter = 
+VAR ListaTexto = CONCATENATEX( VALUES('A0_Meses'[Meses]) , [Meses] , ",")
+VAR ListaMeses = SUBSTITUTE ( ListaTexto, ",", "|" )
+VAR Size = PATHLENGTH ( ListaMeses )
+VAR Tabla =
+    ADDCOLUMNS(
+        GENERATESERIES( 1, Size ),
+        "mylist", VALUE( PATHITEM( ListaMeses, [Value] ) )
+    )
+VAR ListaFinal =  SELECTCOLUMNS( Tabla, "list", [mylist] )
+RETURN
+    CALCULATE( SUM (FACTURACION_TOTAL[M01 COSTES]), VALUE(MONTH(FACTURACION_TOTAL[00 FECHA])) IN ListaFinal )
+	
+N01 Ganancia OK = CALCULATE(SUM(FACTURACION_TOTAL[N01 GANANCIA]))
+
+N01 Ganancia Ok Año Ant = CALCULATE(FACTURACION_TOTAL[N01 Ganancia OK], REMOVEFILTERS(FACTURACION_TOTAL[00 Fecha Año]), SAMEPERIODLASTYEAR(A0_Calendario[Date]) )
+
+P02 Cantidad Total Ok = CALCULATE(SUM(FACTURACION_TOTAL[P01 CANTIDAD]))
+
+P02 Cantidad Total Ok Año Ant = CALCULATE([P02 Cantidad Total Ok], REMOVEFILTERS(FACTURACION_TOTAL[00 Fecha Año]), SAMEPERIODLASTYEAR(A0_Calendario[Date]) )
+
+Q01 Etiqueta % Margen / Ventas = "% Margen/Ventas " & SELECTEDVALUE(FACTURACION_TOTAL[00 Fecha Año])
+
+Q01 Etiqueta Evolucion = "Evolución " & SELECTEDVALUE(Variables[Nombre Variable]) & " Mensual Comparativa " & SELECTEDVALUE(A0_Calendario[Año]) & " vs " & SELECTEDVALUE(A0_Calendario[Año])-1
+
+Q01 Etiqueta Ganancias = "Ganancias " & SELECTEDVALUE(FACTURACION_TOTAL[00 Fecha Año])
+
+Q01 Etiqueta Precio Euro/KG = "Precio Euro/KG " & SELECTEDVALUE(FACTURACION_TOTAL[00 Fecha Año])
+
+Q01 Etiqueta Ranking = "Ranking " & SELECTEDVALUE(Variables[Nombre Variable]) & " por " & SELECTEDVALUE('00 Dimension Ranking Ventas'[Q01 Nombre Etiqueta])
+
+Q01 Etiqueta Tarta = SELECTEDVALUE(Variables[Nombre Variable]) & " por " & SELECTEDVALUE('00 Dimension Ranking Ventas'[Q01 Nombre Etiqueta])
+
+Q01 Etiqueta Venta = "Ventas " & SELECTEDVALUE(FACTURACION_TOTAL[00 Fecha Año])
+
+Q01 Etiqueta Ventas KG = "Ventas KG " & SELECTEDVALUE(FACTURACION_TOTAL[00 Fecha Año])

@@ -1,0 +1,61 @@
+
+
+----------------------- Medidas ALMACEN ----------------------------
+
+
+D02 STOCK + Pend. entrar = CALCULATE(SUM(ALMACEN[D01 STOCK]) + SUM(ALMACEN[E01 PENDIENTE_ENTRAR]))
+
+D03 STOCK completo = CALCULATE(SUM(ALMACEN[D01 STOCK]) + SUM(ALMACEN[E01 PENDIENTE_ENTRAR]) - SUM(ALMACEN[F01 PENDIENTE_SERVIR]))
+
+F01 Pendiente servir negativo = SUM(ALMACEN[F01 PENDIENTE_SERVIR])*-1
+
+
+----------------------- Medidas FACTURACION_TOTAL ----------------------------
+
+
+K01 Importe Ok = CALCULATE(SUM(FACTURACION_TOTAL[K01 IMPORTE]))
+
+K01 Importe OK Año Ant = CALCULATE([K01 Importe Ok], REMOVEFILTERS(FACTURACION_TOTAL[00 Fecha Año]), SAMEPERIODLASTYEAR(A0_CalendarioFT[Date]))
+
+K01 Importe Ok Filter = 
+VAR ListaTexto = CONCATENATEX( VALUES('A0_Meses'[Meses]) , [Meses] , ",")
+VAR ListaMeses = SUBSTITUTE ( ListaTexto, ",", "|" )
+VAR Size = PATHLENGTH ( ListaMeses )
+VAR Tabla =
+    ADDCOLUMNS(
+        GENERATESERIES( 1, Size ),
+        "mylist", VALUE( PATHITEM( ListaMeses, [Value] ) )
+    )
+VAR ListaFinal =  SELECTCOLUMNS( Tabla, "list", [mylist] )
+RETURN
+    CALCULATE( SUM (FACTURACION_TOTAL[K01 IMPORTE]), VALUE(MONTH(FACTURACION_TOTAL[00 FECHA])) IN ListaFinal )
+	
+K02 Euro / KG = CALCULATE(DIVIDE([K01 Importe Ok], [P02 Cantidad Total Ok], 0))
+
+K02 Euro / KG Año Ant = CALCULATE([K02 Euro / KG], REMOVEFILTERS(FACTURACION_TOTAL[00 Fecha Año]), SAMEPERIODLASTYEAR(A0_CalendarioFT[Date]) )
+
+K03 % Margen / Ventas = 
+VAR Margen = CALCULATE(1-(DIVIDE(FACTURACION_TOTAL[M01 Costes Ok],FACTURACION_TOTAL[K01 Importe Ok Filter],0)))
+Return IF(Margen <> 1, Margen)
+
+K03 % Margen / Ventas Año Ant = CALCULATE(1-DIVIDE(FACTURACION_TOTAL[M01 Costes Ok],FACTURACION_TOTAL[K01 Importe Ok Filter],0), REMOVEFILTERS(FACTURACION_TOTAL[00 Fecha Año]), SAMEPERIODLASTYEAR(A0_CalendarioFT[Date]) )
+
+M01 Costes Ok = CALCULATE(SUM(FACTURACION_TOTAL[M01 COSTES]))
+
+N01 Ganancia OK = CALCULATE(SUM(FACTURACION_TOTAL[N01 GANANCIA]))
+
+N01 Ganancia Ok Año Ant = CALCULATE(FACTURACION_TOTAL[N01 Ganancia OK], REMOVEFILTERS(FACTURACION_TOTAL[00 Fecha Año]), SAMEPERIODLASTYEAR(A0_CalendarioFT[Date]) )
+
+P02 Cantidad Total Ok = CALCULATE(SUM(FACTURACION_TOTAL[P01 CANTIDAD]))
+
+P02 Cantidad Total Ok Año Ant = CALCULATE([P02 Cantidad Total Ok], REMOVEFILTERS(FACTURACION_TOTAL[00 Fecha Año]), SAMEPERIODLASTYEAR(A0_CalendarioFT[Date]) )
+
+Q01 Etiqueta % Margen / Ventas = "% Margen/Ventas " & SELECTEDVALUE(FACTURACION_TOTAL[00 Fecha Año])
+	
+Q01 Etiqueta Ganancias = "Ganancias " & SELECTEDVALUE(FACTURACION_TOTAL[00 Fecha Año])
+
+Q01 Etiqueta Precio Euro/KG = "Precio Euro/KG " & SELECTEDVALUE(FACTURACION_TOTAL[00 Fecha Año])
+
+Q01 Etiqueta Venta = "Ventas " & SELECTEDVALUE(FACTURACION_TOTAL[00 Fecha Año])
+
+Q01 Etiqueta Ventas KG = "Ventas KG " & SELECTEDVALUE(FACTURACION_TOTAL[00 Fecha Año])
